@@ -14,6 +14,11 @@ export type ProjectChapter = {
   pose: ModelPose;
 };
 
+export type ProjectPhoto = {
+  source: string;
+  alt: string;
+};
+
 export type PortfolioProject = {
   id: string;
   eyebrow: string;
@@ -23,6 +28,7 @@ export type PortfolioProject = {
   model: {
     source: string;
     fallbackImage: string;
+    photos: ProjectPhoto[];
   };
   chapters: ProjectChapter[];
 };

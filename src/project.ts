@@ -9,6 +9,14 @@ export const keyboardProject: PortfolioProject = {
   model: {
     source: '/models/tbk-left.drc',
     fallbackImage: '/images/keyboard-fallback.webp',
+    photos: [
+      {
+        source: '/images/keyboard-fallback.webp',
+        alt: 'Finished TBK-Micro Mk1 split ergonomic keyboard on a patterned desk mat',
+      },
+      // Add more product photos here after placing them in public/images/keyboard/.
+      // { source: '/images/keyboard/tbk-micro-detail.webp', alt: 'Close-up of the keyboard OLED and keycaps' },
+    ],
   },
   chapters: [
     {

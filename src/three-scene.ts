@@ -13,7 +13,6 @@ export class KeyboardScene {
   private readonly scene = new THREE.Scene();
   private readonly camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
   private readonly modelRoot = new THREE.Group();
-  private readonly clock = new THREE.Clock();
   private readonly pointer = new THREE.Vector2();
   private readonly targetRotation = new THREE.Vector3();
   private readonly targetPosition = new THREE.Vector3();
@@ -43,7 +42,6 @@ export class KeyboardScene {
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     this.camera.position.set(0, 0.25, 7.2);
-    this.scene.fog = new THREE.FogExp2(0x0a0a09, 0.06);
     this.scene.add(this.modelRoot);
     this.addLighting();
 
@@ -51,7 +49,7 @@ export class KeyboardScene {
     this.resizeObserver.observe(stage);
     this.intersectionObserver = new IntersectionObserver(([entry]) => {
       this.active = entry.isIntersecting;
-      if (this.active) this.render();
+      if (this.active) this.requestRender();
     }, { rootMargin: '160px' });
     this.intersectionObserver.observe(stage);
 
@@ -60,7 +58,7 @@ export class KeyboardScene {
     canvas.addEventListener('pointerup', this.onPointerUp);
     canvas.addEventListener('pointercancel', this.onPointerUp);
     this.resize();
-    this.render();
+    this.requestRender();
   }
 
   async load(modelUrl: string): Promise<void> {
@@ -70,7 +68,7 @@ export class KeyboardScene {
 
     try {
       const geometry = await loader.loadAsync(modelUrl);
-      if (this.disposed) return;
+      if (this.disposed) { geometry.dispose(); return; }
       this.prepareGeometry(geometry);
 
       const material = new THREE.MeshStandardMaterial({
@@ -89,9 +87,12 @@ export class KeyboardScene {
       mesh.scale.setScalar(normalization);
 
       this.options.onReady();
+      this.requestRender();
     } catch (error) {
-      console.error('Unable to load the keyboard model.', error);
-      this.options.onError();
+      if (!this.disposed) {
+        console.error('Unable to load the keyboard model.', error);
+        this.options.onError();
+      }
     } finally {
       loader.dispose();
     }
@@ -106,13 +107,27 @@ export class KeyboardScene {
       this.modelRoot.position.set(...pose.position);
       this.modelRoot.scale.setScalar(pose.scale);
     }
+    this.requestRender();
   }
 
   setScrollProgress(progress: number): void {
     this.scrollProgress = progress;
+    this.requestRender();
+  }
+
+  rotate(yaw: number, pitch: number): void {
+    this.dragYaw += yaw;
+    this.dragPitch = THREE.MathUtils.clamp(this.dragPitch + pitch, -1.2, 1.2);
+    this.requestRender();
+  }
+
+  resetRotation(): void {
+    this.dragYaw = this.dragPitch = 0;
+    this.requestRender();
   }
 
   dispose(): void {
+    if (this.disposed) return;
     this.disposed = true;
     window.cancelAnimationFrame(this.frame);
     this.resizeObserver.disconnect();
@@ -121,7 +136,7 @@ export class KeyboardScene {
     this.canvas.removeEventListener('pointermove', this.onPointerMove);
     this.canvas.removeEventListener('pointerup', this.onPointerUp);
     this.canvas.removeEventListener('pointercancel', this.onPointerUp);
-    this.modelRoot.traverse((object) => {
+    this.scene.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
       object.geometry.dispose();
       const materials = Array.isArray(object.material) ? object.material : [object.material];
@@ -146,7 +161,7 @@ export class KeyboardScene {
     key.shadow.mapSize.set(1024, 1024);
     this.scene.add(key);
 
-    const rim = new THREE.DirectionalLight(0xd7ff43, 3.1);
+    const rim = new THREE.DirectionalLight(0xe8ede3, 3.1);
     rim.position.set(4, 1.2, -2.5);
     this.scene.add(rim);
 
@@ -167,29 +182,33 @@ export class KeyboardScene {
     this.camera.position.z = width < 700 ? 8.3 : 7.2;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
+    this.requestRender();
+  }
+
+  private requestRender(): void {
+    if (!this.disposed && !this.frame) this.frame = window.requestAnimationFrame(this.render);
   }
 
   private render = (): void => {
+    this.frame = 0;
     if (this.disposed) return;
-    this.frame = window.requestAnimationFrame(this.render);
     if (!this.active) return;
 
-    const elapsed = this.clock.getElapsedTime();
     const ease = this.options.reducedMotion ? 1 : 0.055;
-    const idle = this.options.reducedMotion || this.dragging ? 0 : Math.sin(elapsed * 0.55) * 0.018;
-    const authoredYaw = this.targetRotation.y + (this.options.reducedMotion ? 0 : (this.scrollProgress - 0.5) * 0.22);
-
-    if (!this.dragging) {
-      this.dragYaw *= 0.94;
-      this.dragPitch *= 0.94;
-    }
-    this.modelRoot.rotation.x = THREE.MathUtils.lerp(this.modelRoot.rotation.x, this.targetRotation.x + this.dragPitch + idle, ease);
+    const authoredYaw = this.targetRotation.y + this.scrollProgress * 0.22;
+    this.modelRoot.rotation.x = THREE.MathUtils.lerp(this.modelRoot.rotation.x, this.targetRotation.x + this.dragPitch, ease);
     this.modelRoot.rotation.y = THREE.MathUtils.lerp(this.modelRoot.rotation.y, authoredYaw + this.dragYaw, ease);
     this.modelRoot.rotation.z = THREE.MathUtils.lerp(this.modelRoot.rotation.z, this.targetRotation.z, ease);
     this.modelRoot.position.lerp(this.targetPosition, ease);
     const nextScale = THREE.MathUtils.lerp(this.modelRoot.scale.x, this.targetScale, ease);
     this.modelRoot.scale.setScalar(nextScale);
     this.renderer.render(this.scene, this.camera);
+    const unsettled = Math.abs(this.modelRoot.rotation.x - this.targetRotation.x - this.dragPitch)
+      + Math.abs(this.modelRoot.rotation.y - authoredYaw - this.dragYaw)
+      + Math.abs(this.modelRoot.rotation.z - this.targetRotation.z)
+      + this.modelRoot.position.distanceTo(this.targetPosition)
+      + Math.abs(nextScale - this.targetScale);
+    if (unsettled > 0.0001) this.requestRender();
   };
 
   private onPointerDown = (event: PointerEvent): void => {
@@ -198,14 +217,16 @@ export class KeyboardScene {
     this.lastPointer.copy(this.pointer);
     this.canvas.setPointerCapture(event.pointerId);
     this.stage.classList.add('is-dragging');
+    this.requestRender();
   };
 
   private onPointerMove = (event: PointerEvent): void => {
     if (!this.dragging) return;
     this.pointer.set(event.clientX, event.clientY);
     this.dragYaw += (this.pointer.x - this.lastPointer.x) * 0.006;
-    this.dragPitch = THREE.MathUtils.clamp(this.dragPitch + (this.pointer.y - this.lastPointer.y) * 0.004, -0.55, 0.55);
+    this.dragPitch = THREE.MathUtils.clamp(this.dragPitch + (this.pointer.y - this.lastPointer.y) * 0.004, -1.2, 1.2);
     this.lastPointer.copy(this.pointer);
+    this.requestRender();
   };
 
   private onPointerUp = (event: PointerEvent): void => {

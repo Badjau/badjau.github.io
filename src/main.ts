@@ -1,203 +1,49 @@
-import gsap from 'gsap';
 import './style.css';
-import { keyboardProject } from './project';
-import type { KeyboardScene } from './three-scene';
+import { projects, type Project } from './library';
+import { mediaMarkup, mountProjectMedia } from './project-media';
+import { visualMarkup, improvementMarkup, mountProjectVisuals } from './project-visuals';
 
-const project = keyboardProject;
-const app = document.querySelector<HTMLDivElement>('#app');
-if (!app) throw new Error('App root is missing.');
+let disposeMedia = () => {};
 
-app.innerHTML = `
-  <header class="site-header" aria-label="Primary navigation">
-    <a class="wordmark" href="#top" aria-label="Badjau, back to title">B<span>—</span>J</a>
-    <a class="header-link" href="https://github.com/Badjau" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
-  </header>
-
-  <main id="top" class="experience">
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-grid" aria-hidden="true"></div>
-      <div class="hero-orbit hero-orbit--one" aria-hidden="true"></div>
-      <div class="hero-orbit hero-orbit--two" aria-hidden="true"></div>
-      <p class="hero-kicker reveal">Independent maker · developer</p>
-      <h1 id="hero-title" class="hero-title reveal">Badjau</h1>
-      <div class="hero-bottom reveal">
-        <p>I make things I actually use,<br />across software, electronics, and 3D fabrication.</p>
-        <a class="scroll-cue" href="#project-story"><span>Selected project</span><span class="scroll-cue__line" aria-hidden="true"></span><span>Scroll</span></a>
-      </div>
-    </section>
-
-    <section id="project-story" class="project" aria-labelledby="project-title" aria-hidden="true">
-      <div class="story">
-        <div class="model-stage" aria-label="Interactive 3D model of the left TBK-Micro Mk1 keyboard split">
-          <img class="model-fallback" src="${project.model.fallbackImage}" alt="Finished TBK-Micro Mk1 split ergonomic keyboard" />
-          <canvas class="model-canvas" aria-hidden="true"></canvas>
-          <div class="model-status" role="status">Loading model <span></span></div>
-          <p class="drag-hint"><span aria-hidden="true">↔</span> Drag to explore</p>
-          <p class="model-index" aria-hidden="true"><span>01</span> / 04</p>
-        </div>
-
-        <div class="project-copy">
-          <header class="project-intro">
-            <div><p class="eyebrow">${project.eyebrow}</p><h2 id="project-title">${project.title}</h2></div>
-            <p>${project.subtitle}</p>
-          </header>
-          <div class="chapters" aria-live="polite">
-            ${project.chapters.map((chapter, index) => `
-              <article class="chapter${index === 0 ? ' is-active' : ''}" data-chapter="${index}" id="${chapter.id}" aria-hidden="${index !== 0}">
-                <div class="chapter-rule" aria-hidden="true"></div>
-                <div class="chapter-meta"><span>${chapter.index}</span><span>${chapter.label}</span></div>
-                <h3>${chapter.title}</h3>
-                <p class="chapter-body">${chapter.body}</p>
-                <p class="chapter-detail">${chapter.detail}</p>
-              </article>
-            `).join('')}
-          </div>
-          <nav class="project-nav" aria-label="Project chapters">
-            <button class="chapter-button chapter-button--prev" type="button" aria-label="Previous chapter">←</button>
-            <p><span class="current-chapter">01</span> / 04</p>
-            <button class="chapter-button chapter-button--next" type="button" aria-label="Next chapter">→</button>
-            <a class="project-link" href="${project.repositoryUrl}" target="_blank" rel="noreferrer">View on GitHub ↗</a>
-          </nav>
-        </div>
-      </div>
-    </section>
-  </main>
-`;
-
-const hero = document.querySelector<HTMLElement>('.hero');
-const projectView = document.querySelector<HTMLElement>('.project');
-const canvas = document.querySelector<HTMLCanvasElement>('.model-canvas');
-const stage = document.querySelector<HTMLElement>('.model-stage');
-const status = document.querySelector<HTMLElement>('.model-status');
-const indexLabel = document.querySelector<HTMLElement>('.model-index span');
-const currentChapter = document.querySelector<HTMLElement>('.current-chapter');
-const chapters = [...document.querySelectorAll<HTMLElement>('.chapter')];
-const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-if (!hero || !projectView || !canvas || !stage || !status || !indexLabel || !currentChapter) {
-  throw new Error('Project experience markup is incomplete.');
+const app = document.querySelector<HTMLDivElement>('#app')!;
+let filter = 'All projects';
+const url = (p: Project) => `#/projects/${p.id}`;
+function card(p: Project, i: number): string {
+  return `<article class="project-card" data-category="${p.category}"><a class="card-link" href="${url(p)}" aria-label="View ${p.title}"><div class="card-image"><img src="${p.image}" alt="${p.alt}" width="1200" height="900" loading="lazy" /><span class="card-open" aria-hidden="true">â†—</span>${p.private ? '<span class="private-label">Private project</span>' : ''}</div><div class="card-meta"><span>${p.category}</span><span>0${i + 1}</span></div><h3>${p.title}</h3><p>${p.cardDescription ?? p.description}</p><span class="card-caption">${p.caption}</span></a></article>`;
 }
-
-let scene: KeyboardScene | undefined;
-let activeChapter = 0;
-let projectIsOpen = false;
-let inputLocked = false;
-let wheelDistance = 0;
-let touchStartY = 0;
-
-async function initializeScene(): Promise<void> {
-  try {
-    const { KeyboardScene: KeyboardSceneConstructor } = await import('./three-scene');
-    scene = new KeyboardSceneConstructor(canvas!, stage!, {
-      reducedMotion,
-      onReady: () => {
-        stage!.classList.add('is-ready');
-        status!.textContent = '3D model ready';
-        window.setTimeout(() => status!.setAttribute('hidden', ''), 500);
-      },
-      onError: () => {
-        stage!.classList.add('has-fallback');
-        status!.textContent = 'Showing project image';
-      },
-    });
-    scene.setPose(project.chapters[activeChapter].pose, true);
-    await scene.load(project.model.source);
-  } catch {
-    stage!.classList.add('has-fallback');
-    status!.textContent = 'Showing project image';
+function library(): string {
+  return `<section class="intro"><p class="eyebrow">Independent maker & developer</p><h1 tabindex="-1">Useful things.<br /><span>Thoughtfully made.</span></h1><p class="intro-copy">A collection of personal builds and practical software.<br class="desktop-break" /> From the first idea to something used every day.</p></section><section id="work" class="work" aria-labelledby="work-title"><div class="section-top"><h2 id="work-title">Project library <span>03</span></h2><p>A few things I've been working on.</p></div><div class="library-toolbar"><div class="filters" role="group" aria-label="Filter projects">${['All projects', 'Hardware', 'Software'].map(label => `<button type="button" data-filter="${label}" aria-pressed="${filter === label}">${label}</button>`).join('')}</div><span class="result-count" role="status" aria-live="polite"></span></div><div class="project-grid">${projects.map(card).join('')}</div></section><section id="about" class="about"><p class="eyebrow">A little about me</p><div><h2>Curiosity, made tangible.</h2><p>I'm Badjau. I make things I actually use, across software, electronics, and 3D fabrication. I enjoy working through the details that turn an idea into something useful.</p><a class="text-link" href="https://github.com/Badjau" target="_blank" rel="noreferrer">More on GitHub â†—</a></div></section>`;
+}
+function detail(p: Project): string {
+  const next = projects[(projects.indexOf(p) + 1) % projects.length];
+  return `<article class="project-detail"><a class="back-link" href="#work">â† All projects</a><header class="detail-header"><p class="eyebrow">${p.category} / ${p.caption}</p><h1 tabindex="-1">${p.title}</h1><p>${p.description}</p></header><figure class="detail-image ${p.id}"><img src="${p.image}" alt="${p.alt}" width="1200" height="900" />${p.private ? '<figcaption>Abstract project illustration</figcaption>' : ''}</figure><div class="detail-layout"><aside><h2>At a glance</h2><dl><dt>Focus</dt><dd>${p.focus}</dd><dt>Project</dt><dd>${p.private ? 'Confidential work' : 'Personal build'}</dd></dl>${p.repository ? `<a class="text-link" href="${p.repository}" target="_blank" rel="noreferrer">View repository â†—</a>` : '<p class="confidential-note">Code and product details are private.</p>'}</aside><div class="detail-story">${p.metrics ? `<div class="metrics">${p.metrics.map(m => `<div><strong>${m.value}</strong><span>${m.label}</span></div>`).join('')}</div>` : ''}${p.sections.map((s, index) => `<section><h2>${s.title}</h2><p>${s.body}</p></section>${index === 0 ? visualMarkup(p) : ''}`).join('')}${improvementMarkup(p)}${mediaMarkup(p)}${p.benchmark ? `<section class="benchmark"><p class="eyebrow">Measured performance</p><h2>A closer look at the numbers.</h2><table aria-label="Focused extraction benchmark"><tbody>${p.benchmark.rows.map(row => `<tr><th scope="row">${row.label}</th><td>${row.value}</td></tr>`).join('' )}</tbody></table><p class="benchmark-note">${p.benchmark.note}</p></section>` : ''}${p.secondaryImage ? `<figure class="process-image"><img src="${p.secondaryImage}" alt="${p.secondaryAlt}" loading="lazy" /><figcaption>${p.secondaryAlt}</figcaption></figure>` : ''}</div></div><nav class="detail-navigation" aria-label="Browse projects"><a href="#work">â† All projects</a><a href="${url(next)}"><span>Next project</span>${next.title} â†’</a></nav></article>`;
+}
+function applyFilter(): void {
+  let count = 0;
+  document.querySelectorAll<HTMLElement>('.project-card').forEach(card => {card.hidden = filter !== 'All projects' && card.dataset.category !== filter; if (!card.hidden) count++;});
+  document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.filter === filter)));
+  const status = document.querySelector('.result-count');
+  if (status) status.textContent = `${count} ${count === 1 ? 'project' : 'projects'}`;
+}
+function render(): void {
+  disposeMedia();
+  // Plain anchor navigation stays native; only project routes replace the page.
+  const slug = location.hash.match(/^#\/projects\/([^/]+)$/)?.[1];
+  const project = projects.find(p => p.id === slug);
+  document.title = project ? `${project.title} â€” Badjau` : 'Badjau â€” Selected work';
+  app.innerHTML = `<header class="site-header"><a class="wordmark" href="#top" aria-label="Badjau home">badjau<span>.</span></a><nav aria-label="Main navigation"><a href="#work" ${!project && location.hash !== '#about' ? 'aria-current="page"' : ''}>Work</a><a href="#about" ${location.hash === '#about' ? 'aria-current="page"' : ''}>About</a><a href="https://github.com/Badjau" target="_blank" rel="noreferrer">GitHub â†—</a></nav></header><main id="main-content" tabindex="-1">${project ? detail(project) : slug ? '<section class="not-found"><h1 tabindex="-1">Project not found.</h1><a class="text-link" href="#work">â† Browse all projects</a></section>' : library()}</main><footer><a href="#top">badjau.</a><p>Made with care. Always a work in progress.</p><a href="https://github.com/Badjau" target="_blank" rel="noreferrer">GitHub â†—</a></footer>`;
+  document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach(b => b.addEventListener('click', () => {filter = b.dataset.filter!; applyFilter();}));
+  applyFilter();
+  disposeMedia = mountProjectMedia(project);
+  mountProjectVisuals();
+  if (project || slug) { window.scrollTo(0, 0); document.querySelector<HTMLElement>('h1')?.focus({preventScroll:true}); }
+  else if (['#work', '#about', '#main-content'].includes(location.hash)) {
+    const target = document.querySelector<HTMLElement>(location.hash);
+    target?.scrollIntoView();
+    if (location.hash === '#main-content') target?.focus({ preventScroll: true });
   }
+  else window.scrollTo(0, 0);
 }
-
-if ('requestIdleCallback' in window) {
-  window.requestIdleCallback(() => initializeScene(), { timeout: 900 });
-} else {
-  globalThis.setTimeout(() => initializeScene(), 180);
-}
-
-function lockInput(): void {
-  inputLocked = true;
-  window.setTimeout(() => { inputLocked = false; }, reducedMotion ? 40 : 760);
-}
-
-function showProject(open: boolean): void {
-  if (projectIsOpen === open) return;
-  projectIsOpen = open;
-  document.body.classList.toggle('show-project', open);
-  hero!.setAttribute('aria-hidden', String(open));
-  projectView!.setAttribute('aria-hidden', String(!open));
-  history.replaceState(null, '', open ? '#project-story' : '#top');
-  lockInput();
-}
-
-function activateChapter(index: number): void {
-  const nextIndex = Math.max(0, Math.min(project.chapters.length - 1, index));
-  if (nextIndex === activeChapter) return;
-  activeChapter = nextIndex;
-  chapters.forEach((chapter, chapterIndex) => {
-    const active = chapterIndex === activeChapter;
-    chapter.classList.toggle('is-active', active);
-    chapter.setAttribute('aria-hidden', String(!active));
-  });
-  indexLabel!.textContent = project.chapters[activeChapter].index;
-  currentChapter!.textContent = project.chapters[activeChapter].index;
-  scene?.setPose(project.chapters[activeChapter].pose, reducedMotion);
-  scene?.setScrollProgress(activeChapter / Math.max(project.chapters.length - 1, 1));
-  lockInput();
-}
-
-function move(direction: 1 | -1): void {
-  if (inputLocked) return;
-  if (!projectIsOpen) {
-    if (direction > 0) showProject(true);
-    return;
-  }
-  if (direction < 0 && activeChapter === 0) {
-    showProject(false);
-    return;
-  }
-  activateChapter(activeChapter + direction);
-}
-
-window.addEventListener('wheel', (event) => {
-  event.preventDefault();
-  if (inputLocked) return;
-  wheelDistance += event.deltaY;
-  if (Math.abs(wheelDistance) < 28) return;
-  move(wheelDistance > 0 ? 1 : -1);
-  wheelDistance = 0;
-}, { passive: false });
-
-window.addEventListener('keydown', (event) => {
-  if (['ArrowDown', 'ArrowRight', 'PageDown', ' '].includes(event.key)) {
-    event.preventDefault();
-    move(1);
-  } else if (['ArrowUp', 'ArrowLeft', 'PageUp'].includes(event.key)) {
-    event.preventDefault();
-    move(-1);
-  } else if (event.key === 'Home') {
-    event.preventDefault();
-    showProject(false);
-  }
-});
-
-window.addEventListener('touchstart', (event) => { touchStartY = event.touches[0]?.clientY ?? 0; }, { passive: true });
-window.addEventListener('touchend', (event) => {
-  const endY = event.changedTouches[0]?.clientY ?? touchStartY;
-  if (Math.abs(touchStartY - endY) > 44) move(touchStartY > endY ? 1 : -1);
-}, { passive: true });
-
-document.querySelector('.scroll-cue')?.addEventListener('click', (event) => {
-  event.preventDefault();
-  showProject(true);
-});
-document.querySelector('.wordmark')?.addEventListener('click', (event) => {
-  event.preventDefault();
-  showProject(false);
-});
-document.querySelector('.chapter-button--prev')?.addEventListener('click', () => move(-1));
-document.querySelector('.chapter-button--next')?.addEventListener('click', () => move(1));
-
-if (location.hash === '#project-story') showProject(true);
-if (!reducedMotion) gsap.from('.reveal', { y: 28, opacity: 0, duration: 1, stagger: 0.12, ease: 'power3.out' });
-
-window.addEventListener('pagehide', () => scene?.dispose(), { once: true });
+window.addEventListener('pagehide', () => disposeMedia());
+window.addEventListener('hashchange', render);
+render();

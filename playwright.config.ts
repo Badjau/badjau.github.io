@@ -6,6 +6,9 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   use: {
+    launchOptions: process.env.PLAYWRIGHT_EXECUTABLE_PATH
+      ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH }
+      : {},
     baseURL: 'http://127.0.0.1:4173',
     trace: 'on-first-retry',
   },

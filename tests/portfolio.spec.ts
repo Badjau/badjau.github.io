@@ -2,14 +2,14 @@
 
 test('library shows projects in order and filters by category', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.project-card h3')).toHaveText(['TBK-Micro Mk1', 'Raven', 'Document Parsing Automation']);
+  await expect(page.locator('.project-card h3')).toHaveText(['TBK-Micro Mk1', 'Raven', 'Document Parsing Automation', 'Inventory Tracking System']);
   await page.getByRole('button', { name: 'Software', exact: true }).click();
-  await expect(page.locator('.project-card:visible h3')).toHaveText(['Document Parsing Automation']);
-  await expect(page.getByRole('status')).toHaveText('1 project');
+  await expect(page.locator('.project-card:visible h3')).toHaveText(['Document Parsing Automation', 'Inventory Tracking System']);
+  await expect(page.getByRole('status')).toHaveText('2 projects');
   await page.getByRole('button', { name: 'Hardware', exact: true }).click();
   await expect(page.locator('.project-card:visible')).toHaveCount(2);
   await page.getByRole('button', { name: 'All projects', exact: true }).click();
-  await expect(page.locator('.project-card:visible')).toHaveCount(3);
+  await expect(page.locator('.project-card:visible')).toHaveCount(4);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
   for (const img of await page.locator('.card-image img').all()) {
@@ -55,7 +55,7 @@ test('keyboard access and reduced motion remain usable', async ({ page }) => {
   await page.goto('/#/projects/missing');
   await expect(page.getByRole('heading', { name: 'Project not found.' })).toBeVisible();
   await page.getByRole('link', { name: 'Browse all projects' }).click();
-  await expect(page.locator('.project-card')).toHaveCount(3);
+  await expect(page.locator('.project-card')).toHaveCount(4);
 });
 
 test('Mk1 loads 3D only on request and supports rotation, reset, and reopening', async ({ page }) => {
@@ -169,7 +169,7 @@ test('manual comparison reports both winners, the tie, and invalid input fairly'
   await lines.fill('1');
   await expect(chart).toHaveAttribute('aria-label', /manual entry 5 seconds, automated parsing 15 seconds/);
   await expect(result).toHaveText('Manual entry is 3× faster in this scenario.');
-  await expect(page.locator('.calculator-difference')).toContainText('15 seconds saved · 66.67% less time');
+  await expect(page.locator('.calculator-difference')).toContainText('10 seconds saved · 66.67% less time');
   await lines.fill('3');
   await expect(result).toHaveText('Both take 15 seconds. Neither has a time advantage.');
   await seconds.fill('1');

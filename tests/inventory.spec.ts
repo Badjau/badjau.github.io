@@ -1,0 +1,33 @@
+import { expect, test } from '@playwright/test';
+
+test('inventory demo records handovers, searches past holders, and resets', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'View Inventory Tracking System', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'View repository' })).toHaveAttribute('href', 'https://github.com/Badjau/inventory-system');
+  const demo = page.locator('.inventory-demo');
+  const returnButton = demo.getByRole('button', { name: 'Return to pool' });
+  await expect(returnButton).toBeDisabled();
+  await demo.getByRole('button', { name: 'Assign device', exact: true }).click();
+  await expect(demo.locator('.inventory-holder')).toHaveText('Alex Rivera');
+  await demo.getByRole('button', { name: 'Assign device', exact: true }).click();
+  await expect(demo.locator('.inventory-history li')).toHaveCount(2);
+  await returnButton.click();
+  await expect(demo.locator('.inventory-badge')).toHaveText('Available');
+  await expect(returnButton).toBeDisabled();
+  await demo.getByLabel('Assign to', { exact: true }).selectOption('Sam Cruz');
+  await demo.getByRole('button', { name: 'Assign device', exact: true }).click();
+  const search = demo.getByRole('searchbox');
+  await search.fill('Alex');
+  await expect(demo.locator('.inventory-device')).toBeVisible();
+  await expect(demo.locator('.inventory-holder')).toHaveText('Sam Cruz');
+  await search.fill('unknown device');
+  await expect(demo.locator('.inventory-device')).toBeHidden();
+  await expect(demo.locator('.inventory-empty')).toBeVisible();
+  await demo.getByRole('button', { name: 'Reset demo' }).click();
+  await expect(search).toHaveValue('');
+  await expect(demo.locator('.inventory-history li')).toHaveCount(1);
+  await expect(demo.locator('.inventory-device')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+  await page.reload();
+  await expect(demo.locator('.inventory-holder')).toHaveText('Available pool');
+});

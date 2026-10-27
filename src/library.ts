@@ -1,4 +1,4 @@
-﻿export type Project = {
+export type Project = {
   id: string; title: string; category: 'Hardware' | 'Software'; description: string;
   caption: string; image: string; alt: string; focus: string; repository?: string;
   cardDescription?: string;
@@ -66,6 +66,19 @@ export const projects: Project[] = [
       { title: 'From an image to usable information.', body: 'AI-assisted extraction reads submitted images, while a text parser handles typed input. Local validation checks the resulting fields before eligible entries reach the website. Unclear or invalid readings are held for review, giving staff a way to inspect and correct them.' },
       { title: 'Efficiency beyond the first response.', body: 'A separate, earlier three-run comparison reduced mean extraction time from 33.84 to 15.73 seconds, a 53.5% improvement, while reducing mean total token usage by 61.1%. Completed extractions are retained so later save or delivery retries can reuse them. These are focused engineering measurements, rather than a claim about billing savings or all production traffic.' },
       { title: 'Built for concentrated demand.', body: 'Reported usage spans 500 users, with bursts of roughly 100 concurrent submissions. Queued processing helps absorb busy periods, while duplicate handling and saved progress protect against repeated work. A submission burst is different from simultaneous image extraction: waiting time can grow under load.' },
+    ],
+  },
+  {
+    id: 'inventory-system', title: 'Inventory Tracking System', category: 'Software',
+    description: 'Track company equipment, who has it, and every handover along the way.',
+    caption: 'Equipment tracking · PHP & MySQL',
+    image: '/images/projects/inventory-system.svg', alt: 'Illustrated inventory workspace with equipment, assignment status, and handover history',
+    focus: 'Equipment management & traceable handovers', repository: 'https://github.com/Badjau/inventory-system',
+    sections: [
+      { title: 'Know where equipment goes.', body: 'An equipment list is only useful when it stays connected to the people using it. This application brings devices, assignments, photos, and handover history into one workspace. Search covers device details as well as current and previous holders.' },
+      { title: 'A return keeps the story intact.', body: 'Equipment can be assigned to employees, inventory-only associates, or shared departments, then returned to the available pool. Returning a device preserves its identity and history, so the next handover builds on the previous record.' },
+      { title: 'Work with the records teams already have.', body: 'Excel import previews let staff review equipment updates and holder selections before approval. Exports support reporting and later reimport. The app reads an existing HR directory while keeping inventory records and history separate.' },
+      { title: 'More than an assignment list.', body: 'Device specifications, evidence photos, notes, and recorded changes provide context beyond a current status. Disposal can also recover reusable components as separate equipment records. PHP, PDO MySQL, and vanilla JavaScript keep the application straightforward to run.' },
     ],
   },
 ];

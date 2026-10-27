@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" fill="none">
+  <rect width="1200" height="900" fill="#e7ebdf"/>
+  <rect x="125" y="130" width="950" height="640" rx="18" fill="#fafaf4" stroke="#c3cdb8" stroke-width="2"/>
+  <path d="M125 210h950" stroke="#d2d9ca" stroke-width="2"/>
+  <circle cx="168" cy="171" r="9" fill="#536c48"/>
+  <text x="195" y="180" fill="#35452d" font-family="Arial,sans-serif" font-size="25">Equipment workspace</text>
+  <rect x="185" y="267" width="410" height="280" rx="12" fill="#e9eee2"/>
+  <rect x="273" y="315" width="235" height="148" rx="9" stroke="#536c48" stroke-width="9"/>
+  <path d="M251 489h279l-22 18H273Z" fill="#536c48"/>
+  <text x="185" y="603" fill="#293225" font-family="Arial,sans-serif" font-size="31">Studio laptop</text>
+  <text x="185" y="642" fill="#6c7663" font-family="Arial,sans-serif" font-size="21">INV-001 / Laptop</text>
+  <rect x="185" y="678" width="156" height="38" rx="19" fill="#dce6d1"/>
+  <text x="211" y="704" fill="#435b37" font-family="Arial,sans-serif" font-size="20">Available</text>
+  <text x="655" y="298" fill="#35452d" font-family="Arial,sans-serif" font-size="24">Handover history</text>
+  <path d="M674 363v245" stroke="#b6c6a6" stroke-width="3"/>
+  <g fill="#536c48"><circle cx="674" cy="363" r="9"/><circle cx="674" cy="477" r="9"/><circle cx="674" cy="591" r="9"/></g>
+  <g fill="#35452d" font-family="Arial,sans-serif" font-size="21"><text x="705" y="370">Returned to pool</text><text x="705" y="484">Assigned to Alex</text><text x="705" y="598">Device registered</text></g>
+  <g stroke="#d5dccf" stroke-width="8" stroke-linecap="round"><path d="M709 402h245"/><path d="M709 516h196"/><path d="M709 630h224"/></g>
+</svg>

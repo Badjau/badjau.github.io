@@ -12,6 +12,18 @@ export type Project = {
 // Curated public copy only. Do not add confidential implementation details.
 export const projects: Project[] = [
   {
+    id: 'attendance-hr-core', title: 'Attendance & HR Core', category: 'Software', private: true,
+    description: 'Autonomous facial recognition for faster time-ins. A shared employee foundation for attendance, field itineraries, equipment, and documents.',
+    caption: 'Connected workplace ecosystem',
+    image: '/images/projects/hr-ecosystem.svg', alt: 'Attendance and HR core connecting inventory tracking and document management',
+    focus: 'Autonomous facial recognition & a connected workplace ecosystem',
+    metrics: [{ value: '1–3s', label: 'Reported time per time-in' }, { value: '3', label: 'Connected applications · documents in progress' }],
+    sections: [
+      { title: 'A faster start to the workday.', body: 'Hand logging and the previous fingerprint scanner made clocking in a repeated point of friction. Reported time-ins fell from a typical 5–10 seconds, with some employees taking up to a minute, to 1–3 seconds. The calculator below explores how those seconds accumulate across a team.' },
+      { title: 'The foundation for my workplace ecosystem.', body: 'I built the attendance system into an employee and account foundation that other applications can use. Inventory connects equipment to the people using it. The document management system, still in progress, builds participant and access workflows around the same employee directory. These applications share a people foundation while managing their own work records.' },
+    ],
+  },
+  {
     id: 'mk1', title: 'TBK-Micro Mk1', category: 'Hardware',
     description: 'My first custom keyboard. A crash course in 3D design, soldering, and making everything fit.',
     caption: 'Custom keyboard · ZMK firmware',

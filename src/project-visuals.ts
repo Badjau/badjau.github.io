@@ -1,4 +1,5 @@
 import type { Project } from './library';
+import { attendanceMarkup, mountAttendanceDemo } from './attendance-demo';
 import { inventoryMarkup, mountInventoryDemo } from './inventory-demo';
 
 const svgStart = (label: string, viewBox = '0 0 640 300') => `<svg class="project-diagram" viewBox="${viewBox}" role="img" aria-label="${label}" xmlns="http://www.w3.org/2000/svg">`;
@@ -125,7 +126,7 @@ const improvements: Record<string, { title: string; body: string; check: string 
 };
 
 export function visualMarkup(project: Project): string {
-  const content = project.id === 'mk1' ? mk1() : project.id === 'raven' ? raven() : project.id === 'document-parsing' ? parsing() : project.id === 'inventory-system' ? inventoryMarkup() : '';
+  const content = project.id === 'attendance-hr-core' ? attendanceMarkup() : project.id === 'mk1' ? mk1() : project.id === 'raven' ? raven() : project.id === 'document-parsing' ? parsing() : project.id === 'inventory-system' ? inventoryMarkup() : '';
   return content ? `<section class="project-visuals" aria-label="Project visualization">${content}</section>` : '';
 }
 
@@ -138,6 +139,7 @@ export function mountProjectVisuals(): void {
   const panel = document.querySelector<HTMLElement>('.visual-panel');
   if (!panel) return;
   if (panel.dataset.visual === 'inventory') mountInventoryDemo(panel);
+  if (panel.dataset.visual === 'attendance') mountAttendanceDemo(panel);
   const linesInput = panel.querySelector<HTMLInputElement>('#document-lines');
   const secondsInput = panel.querySelector<HTMLInputElement>('#manual-seconds');
   if (linesInput && secondsInput) {

@@ -1,15 +1,15 @@
-﻿import { expect, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 test('library shows projects in order and filters by category', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.project-card h3')).toHaveText(['TBK-Micro Mk1', 'Raven', 'Document Parsing Automation', 'Inventory Tracking System']);
+  await expect(page.locator('.project-card h3')).toHaveText(['Attendance & HR Core', 'TBK-Micro Mk1', 'Raven', 'Document Parsing Automation', 'Inventory Tracking System']);
   await page.getByRole('button', { name: 'Software', exact: true }).click();
-  await expect(page.locator('.project-card:visible h3')).toHaveText(['Document Parsing Automation', 'Inventory Tracking System']);
-  await expect(page.getByRole('status')).toHaveText('2 projects');
+  await expect(page.locator('.project-card:visible h3')).toHaveText(['Attendance & HR Core', 'Document Parsing Automation', 'Inventory Tracking System']);
+  await expect(page.getByRole('status')).toHaveText('3 projects');
   await page.getByRole('button', { name: 'Hardware', exact: true }).click();
   await expect(page.locator('.project-card:visible')).toHaveCount(2);
   await page.getByRole('button', { name: 'All projects', exact: true }).click();
-  await expect(page.locator('.project-card:visible')).toHaveCount(4);
+  await expect(page.locator('.project-card:visible')).toHaveCount(5);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
   for (const img of await page.locator('.card-image img').all()) {
@@ -55,7 +55,7 @@ test('keyboard access and reduced motion remain usable', async ({ page }) => {
   await page.goto('/#/projects/missing');
   await expect(page.getByRole('heading', { name: 'Project not found.' })).toBeVisible();
   await page.getByRole('link', { name: 'Browse all projects' }).click();
-  await expect(page.locator('.project-card')).toHaveCount(4);
+  await expect(page.locator('.project-card')).toHaveCount(5);
 });
 
 test('Mk1 loads 3D only on request and supports rotation, reset, and reopening', async ({ page }) => {
@@ -187,4 +187,13 @@ test('manual comparison reports both winners, the tie, and invalid input fairly'
   await expect(page.locator('#calculator-error')).toBeHidden();
   await expect(page.locator('#calculator-assumptions')).toContainText('not a measured result for every document size');
   expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+});
+
+test('project context stays in a compact summary across every project', async ({ page }) => {
+  for (const id of ['attendance-hr-core', 'mk1', 'raven', 'document-parsing', 'inventory-system']) {
+    await page.goto(`/#/projects/${id}`);
+    await expect(page.locator('.project-summary')).toContainText('Focus');
+    await expect(page.getByRole('heading', { name: 'At a glance' })).toHaveCount(0);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(1);
+  }
 });
